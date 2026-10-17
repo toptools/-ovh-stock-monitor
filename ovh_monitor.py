@@ -239,7 +239,9 @@ def notify(subject, body):
     if sent:
         print(f"[+] 已通知: {'、'.join(sent)}")
     else:
-        print("[!] 没有配置通知渠道，内容如下：\n" + subject + "\n" + body)
+        print("[!] 通知没有发出去（未配置或发送失败），内容如下：\n" + subject + "\n" + body)
+        if os.environ.get("GITHUB_ACTIONS"):
+            sys.exit(1)   # 让 GitHub Actions 显示失败，方便发现配置问题
 
 
 # ---------------------------------------------------------------- report
