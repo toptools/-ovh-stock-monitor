@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "*/5 * * * *"   # 每 5 分钟（GitHub 尽力而为，高峰期可能延迟几分钟）
   workflow_dispatch:         # 允许在 Actions 页面手动运行
+    inputs:
+      test_notify:
+        description: "只发一封测试通知"
+        type: boolean
+        default: false
 
 concurrency:
   group: ovh-monitor
@@ -41,7 +46,12 @@ jobs:
           MAX_PRICE_FR: "10"
           MAX_PRICE_CA: "14"
           BRANDS: Kimsufi,So you Start,OVHcloud
-        run: python3 ovh_monitor.py
+        run: |
+          if [ "${{ inputs.test_notify }}" = "true" ]; then
+            python3 ovh_monitor.py --test-notify
+          else
+            python3 ovh_monitor.py
+          fi
 
       - uses: actions/cache/save@v4
         if: always()
