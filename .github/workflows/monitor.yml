@@ -1,0 +1,50 @@
+name: OVH stock monitor
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"   # 每 5 分钟（GitHub 尽力而为，高峰期可能延迟几分钟）
+  workflow_dispatch:         # 允许在 Actions 页面手动运行
+
+concurrency:
+  group: ovh-monitor
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # 恢复上次的库存状态，避免重复提醒
+      - uses: actions/cache/restore@v4
+        with:
+          path: state.json
+          key: ovh-state-${{ github.run_id }}
+          restore-keys: ovh-state-
+
+      - name: Run monitor
+        env:
+          SMTP_HOST: smtp.gmail.com
+          SMTP_PORT: "587"
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+          SUBSIDIARIES: US,FR,CA
+          MAX_PRICE_US: "10"
+          MAX_PRICE_FR: "10"
+          MAX_PRICE_CA: "14"
+          BRANDS: Kimsufi,So you Start,OVHcloud
+        run: python3 ovh_monitor.py
+
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: state.json
+          key: ovh-state-${{ github.run_id }}
